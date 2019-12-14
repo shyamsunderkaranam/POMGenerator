@@ -1,0 +1,7 @@
+
+mvnw install:install-file -Dfile=lib\com.ibm.mq.jar -DgroupId=com.ibm.mq -DartifactId=com.ibm.mq -Dversion=1.0 -Dpackaging=jar -DgeneratePom=true
+mvnw install:install-file -Dfile=lib\com.ibm.mq.pcf.jar -DgroupId=com.ibm.mq.pcf -DartifactId=com.ibm.mq.pcf -Dversion=1.0 -Dpackaging=jar -DgeneratePom=true
+mvnw install:install-file -Dfile=lib\com.ibm.mqjms.jar -DgroupId=com.ibm.mqjms -DartifactId=com.ibm.mqjms -Dversion=1.0 -Dpackaging=jar -DgeneratePom=true
+mvnw install:install-file -Dfile=lib\com.ibm.mq.allclient.jar -DgroupId=com.ibm.mq.allclient -DartifactId=com.ibm.mq.allclient -Dversion=1.0 -Dpackaging=jar -DgeneratePom=true
+mvnw install:install-file -Dfile=lib\com.ibm.mq.jmqi.jar -DgroupId=com.ibm.mq.jmqi -DartifactId=com.ibm.mq.jmqi -Dversion=1.0 -Dpackaging=jar -DgeneratePom=true
+

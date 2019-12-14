@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.kf</groupId>
+	<artifactId>mqstatus</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>war</packaging>
+
+	<name>mqstatus</name>
+	<description>Project for IIB Dashboard</description>
+
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>2.0.5.RELEASE</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<java.version>1.8</java.version>
+		<!--  <version.maven-install-plugin>2.5.2</version.maven-install-plugin> -->
+		<version.com.ibm.mq>1.0.0</version.com.ibm.mq>
+		<version.com.ibm.mq.pcf>1.0.0</version.com.ibm.mq.pcf>
+		<version.com.ibm.mqjms>1.0.0</version.com.ibm.mqjms>
+		<version.com.ibm.mq.allclient>1.0.0</version.com.ibm.mq.allclient>
+		<version.com.ibm.mq.jmqi>1.0.0</version.com.ibm.mq.jmqi>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		 
+		<dependency>
+         <groupId>com.ibm.mq</groupId>
+         <artifactId>com.ibm.mq</artifactId>
+         <version>${version.com.ibm.mq}</version>
+         <!-- <scope>system</scope>
+         <systemPath>${project.basedir}/lib/com.ibm.mq.jar</systemPath> -->
+      </dependency>
+      <dependency>
+         <groupId>com.ibm.mq.pcf</groupId>
+         <artifactId>com.ibm.mq.pcf</artifactId>
+         <version>${version.com.ibm.mq.pcf}</version>
+         <!-- <scope>system</scope>
+         <systemPath>${project.basedir}/lib/com.ibm.mq.pcf.jar</systemPath> -->
+      </dependency>
+      <dependency>
+         <groupId>com.ibm.mqjms</groupId>
+         <artifactId>com.ibm.mqjms</artifactId>
+         <version>${version.com.ibm.mqjms}</version>
+         <!-- <scope>system</scope>
+         <systemPath>${project.basedir}/lib/com.ibm.mqjms.jar</systemPath> -->
+         
+      </dependency>
+      <dependency>
+         <groupId>com.ibm.mq.allclient</groupId>
+         <artifactId>com.ibm.mq.allclient</artifactId>
+         <version>${version.com.ibm.mq.allclient}</version>
+         <!-- <scope>system</scope>
+         <systemPath>${project.basedir}/lib/com.ibm.mq.allclient.jar</systemPath> -->
+         
+      </dependency>
+      <dependency>
+         <groupId>com.ibm.mq.jmqi</groupId>
+         <artifactId>com.ibm.mq.jmqi</artifactId>
+         <version>${version.com.ibm.mq.jmqi}</version>
+         <!-- <scope>system</scope>
+         <systemPath>${project.basedir}/lib/com.ibm.mq.jmqi.jar</systemPath> -->
+      </dependency>
+	 
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			 
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-install-plugin</artifactId>
+				<!-- <version>${version.maven-install-plugin}</version>-->
+				<executions>
+
+					<execution>
+						<id>install-external-ibm-mq1-jar</id>
+						<phase>clean</phase>
+						<configuration>
+							<repositoryLayout>default</repositoryLayout>
+							<groupId>com.ibm.mq</groupId>
+							<artifactId>com.ibm.mq</artifactId>
+							<version>${version.com.ibm.mq}</version>
+							<file>${project.basedir}/lib/com.ibm.mq.jar</file>
+							<packaging>war</packaging>
+							<generatePom>true</generatePom>
+						</configuration>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>install-external-ibm-mq2-jar</id>
+						<phase>clean</phase>
+						<configuration>
+							<repositoryLayout>default</repositoryLayout>
+							<groupId>com.ibm.mq.pcf</groupId>
+							<artifactId>com.ibm.mq.pcf</artifactId>
+							<version>${version.com.ibm.mq.pcf}</version>
+							<file>${project.basedir}/lib/com.ibm.mq.pcf.jar</file>
+							<packaging>war</packaging>
+							<generatePom>true</generatePom>
+						</configuration>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>install-external-ibm-mq3-jar</id>
+						<phase>clean</phase>
+						<configuration>
+							<repositoryLayout>default</repositoryLayout>
+							<groupId>com.ibm.mqjms</groupId>
+							<artifactId>com.ibm.mqjms</artifactId>
+							<version>${version.com.ibm.mqjms}</version>
+							<file>${project.basedir}/lib/com.ibm.mqjms.jar</file>
+							<packaging>war</packaging>
+							<generatePom>true</generatePom>
+						</configuration>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+					</execution>
+					
+					<execution>
+						<id>install-external-ibm-mq4-jar</id>
+						<phase>clean</phase>
+						<configuration>
+							<repositoryLayout>default</repositoryLayout>
+							<groupId>com.ibm.mq.allclient</groupId>
+							<artifactId>com.ibm.mq.allclient</artifactId>
+							<version>${version.com.ibm.mq.allclient}</version>
+							<file>${project.basedir}/lib/com.ibm.mq.allclient.jar</file>
+							<packaging>war</packaging>
+							<generatePom>true</generatePom>
+						</configuration>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+					</execution>
+					
+					<execution>
+						<id>install-external-ibm-mq5-jar</id>
+						<phase>clean</phase>
+						<configuration>
+							<repositoryLayout>default</repositoryLayout>
+							<groupId>com.ibm.mq.jmqi</groupId>
+							<artifactId>com.ibm.mq.jmqi</artifactId>
+							<version>${version.com.ibm.mq.jmqi}</version>
+							<file>${project.basedir}\lib\com.ibm.mq.jmqi.jar</file>
+							<packaging>war</packaging>
+							<generatePom>true</generatePom>
+						</configuration>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			 
+		</plugins>
+	</build>
+
+
+</project>
