@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
@@ -11,8 +11,6 @@ const ITEMS_PER_PAGE = 5;
 const EnvironmentTable = ({ data, searchQuery, currentPage, setPageCount }) => {
   const [personas, setPersonas] = useState([]);
   const [features, setFeatures] = useState([]);
-  const [filteredFeatures, setFilteredFeatures] = useState([]);
-  const [displayFeatures, setDisplayFeatures] = useState([]);
 
   useEffect(() => {
     const personasList = Object.keys(data);
@@ -21,18 +19,18 @@ const EnvironmentTable = ({ data, searchQuery, currentPage, setPageCount }) => {
     setFeatures(featuresList);
   }, [data]);
 
-  useEffect(() => {
-    const newFilteredFeatures = features.filter(feature =>
+  const filteredFeatures = useMemo(() => 
+    features.filter(feature => 
       feature.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    setFilteredFeatures(newFilteredFeatures);
-  }, [features, searchQuery]);
+    ), [features, searchQuery]);
 
   useEffect(() => {
-    const newDisplayFeatures = filteredFeatures.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE);
-    setDisplayFeatures(newDisplayFeatures);
     setPageCount(Math.ceil(filteredFeatures.length / ITEMS_PER_PAGE));
-  }, [filteredFeatures, currentPage, setPageCount]);
+  }, [filteredFeatures, setPageCount]);
+
+  const displayFeatures = useMemo(() => 
+    filteredFeatures.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE), 
+    [filteredFeatures, currentPage]);
 
   return (
     <table>
@@ -74,12 +72,8 @@ function App() {
 
   useEffect(() => {
     axios.get('/api/data')
-      .then(response => {
-        setData(response.data);
-      })
-      .catch(error => {
-        console.error("Error fetching data: ", error);
-      });
+      .then(response => setData(response.data))
+      .catch(error => console.error("Error fetching data: ", error));
   }, []);
 
   const tiers = Object.keys(data);
