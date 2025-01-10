@@ -1,6 +1,8 @@
 import React from 'react';
 
-const Table = ({ data }) => {
+import React from 'react';
+
+const Table = ({ data, showModal }) => {
   const excludeFields = ['fieldToExclude1', 'fieldToExclude2'];
 
   const filteredData = data.map(item => {
@@ -19,9 +21,9 @@ const Table = ({ data }) => {
         </tr>
       </thead>
       <tbody>
-        {filteredData.map((item, index) => (
+        {data.map((item, index) => (
           <tr key={index} onClick={() => showModal(item)}>
-            {Object.values(item).map((value, index) => (
+            {Object.values(filteredData[index]).map((value, index) => (
               <td key={index}>{value}</td>
             ))}
           </tr>
@@ -32,6 +34,7 @@ const Table = ({ data }) => {
 };
 
 export default Table;
+
 
 ************************
 import React, { useState } from 'react';
@@ -59,20 +62,36 @@ const App = () => {
 };
 
 export default App;
+
+
 ***************
 const Modal = ({ item, closeModal }) => {
+  const excludeFields = ['fieldToExclude1', 'fieldToExclude2'];
+
   return (
     <div className="modal">
       <div className="modal-content">
         <span className="close" onClick={closeModal}>&times;</span>
         <h2>Item Details</h2>
-        <pre>{JSON.stringify(item, null, 2)}</pre>
+        <table>
+          <tbody>
+            {Object.keys(item).map((key) => (
+              !excludeFields.includes(key) && (
+                <tr key={key}>
+                  <td><strong>{key}</strong></td>
+                  <td>{item[key]}</td>
+                </tr>
+              )
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 };
 
 export default Modal;
+
 *********
 .modal {
   display: block;
@@ -108,3 +127,30 @@ export default Modal;
   text-decoration: none;
   cursor: pointer;
 }
+
+**********************************
+  table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background-color: #f2f2f2;
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+tr:hover {
+  background-color: #f5f5f5;
+  cursor: pointer;
+}
+
+th {
+  background-color: #4CAF50;
+  color: white;
+}
+**********************
