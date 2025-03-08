@@ -1,25 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
-import Box from '@mui/material/Box';
-import TextField from '@mui/material/TextField';
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Pagination from '@mui/material/Pagination';
-import Button from '@mui/material/Button';
+import { Tabs, Tab, Box, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Pagination, Button, Typography, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import LaunchIcon from '@mui/icons-material/Launch';
 import axios from 'axios';
 import './pagination.css';
 import './App.css';
-import { Typography } from '@mui/material';
 
 const ITEMS_PER_PAGE = 20;
 
-const EnvironmentTable = ({ data, searchQuery, currentPage, setPageCount }) => {
+const EnvironmentTable = ({ data, searchQuery, currentPage, setPageCount, personaFilter }) => {
   const [personas, setPersonas] = useState([]);
   const [features, setFeatures] = useState([]);
 
@@ -45,52 +33,40 @@ const EnvironmentTable = ({ data, searchQuery, currentPage, setPageCount }) => {
 
   return (
     <TableContainer sx={{ maxHeight: 440 }}>
-    <Table stickyHeader aria-label="sticky table">
-      <TableHead >
-        <TableRow className="table-header">
-          <TableCell>
-            <Typography>Feature Toggle Name</Typography>
-            </TableCell>
-          {personas.map((persona) => (
-            <TableCell key={persona}>
-              <Typography>{persona}</Typography>
-            </TableCell>
-          ))}
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {displayFeatures.map((feature) => (
-          <TableRow key={feature}>
-            <TableCell>
-            <Typography>{feature}</Typography>
-            </TableCell>
-            {personas.map((persona) => (
-              <TableCell key={persona}>
-                {/* <a className="ftvalue" href={data[persona]?.url+"."+feature} target="_blank" > */}
-                <Button href={data[persona]?.url+"."+feature}  target="_blank" variant="contained" endIcon={<LaunchIcon />}>
-                  {data[persona]?.ftvalues[feature] ?? "Not Applicable"}
-                </Button>
-              </TableCell>
+      <Table stickyHeader>
+        <TableHead>
+          <TableRow>
+            <TableCell><Typography>Feature Toggle Name</Typography></TableCell>
+            {personas.filter(persona => !personaFilter || persona === personaFilter).map((persona) => (
+              <TableCell key={persona}><Typography>{persona}</Typography></TableCell>
             ))}
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHead>
+        <TableBody>
+          {displayFeatures.map((feature) => (
+            <TableRow key={feature}>
+              <TableCell><Typography>{feature}</Typography></TableCell>
+              {personas.filter(persona => !personaFilter || persona === personaFilter).map((persona) => (
+                <TableCell key={persona}>
+                  <Button href={data[persona]?.url+"."+feature} target="_blank" variant="contained" endIcon={<LaunchIcon />}>
+                    {data[persona]?.ftvalues[feature] ?? "Not Applicable"}
+                  </Button>
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </TableContainer>
   );
 };
-
-const TabPanel = ({ value, index, children }) => (
-  <div role="tabpanel" hidden={value !== index}>
-    {value === index && <Box p={3}>{children}</Box>}
-  </div>
-);
 
 function App2() {
   const [data, setData] = useState({});
   const [tier, setTier] = useState(0);
   const [env, setEnv] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [personaFilter, setPersonaFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [pageCount, setPageCount] = useState(0);
   const [error, setError] = useState(false);
@@ -103,81 +79,57 @@ function App2() {
       .then(response => {
         setData(response.data);
         setLoading(false);
-        setError(false);
-        console.log(response.data);
-        })
-      .catch(error => {
-        console.error("Error fetching data: ", error);
+      })
+      .catch(() => {
         setLoading(false);
         setError(true);
-        });
+      });
   }, []);
 
-  const handlePageChange = (event, value) => {
-    setCurrentPage(value);
-  };
-
+  const handlePageChange = (_, value) => setCurrentPage(value);
   const tiers = Object.keys(data);
   const environments = tiers.length > 0 ? Object.keys(data[tiers[tier]]) : [];
+  const personas = tiers.length > 0 && environments.length > 0 ? Object.keys(data[tiers[tier]][environments[env]]) : [];
 
   return (
     <div className="App">
-        <h2> Feature Toggles Dashboard</h2>
-        {(loading)&& <h3>Loading the data. Please wait....</h3> }
-      {(!loading && !error && data) && 
-      <>
-      <Tabs value={tier} 
-        onChange={(e, newValue) => { setTier(newValue); setEnv(0); setCurrentPage(0); setSearchQuery(''); }}
-        variant="scrollable"
-        scrollButtons="auto"
-      >
-        {tiers.map((tierName, index) => (
-          <Tab label={tierName} key={index} />
-        ))}
-      </Tabs>
-      {tiers.map((tierName, tierIndex) => (
-        <TabPanel value={tier} index={tierIndex} key={tierIndex}>
-          <Tabs value={env} 
-            onChange={(e, newValue) => { setEnv(newValue); setCurrentPage(0); setSearchQuery(''); }}
-            variant="scrollable"
-            scrollButtons="auto"
-            >
-            {environments.map((envName, index) => (
-              <Tab label={envName} key={index} />
-            ))}
-          </Tabs>
-          {environments.map((envName, envIndex) => (
-            <TabPanel value={env} index={envIndex} key={envIndex}>
-              <TextField 
-                label="Search" 
-                variant="outlined" 
-                fullWidth 
-                margin="normal" 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <EnvironmentTable 
-                data={data[tierName][envName]} 
-                searchQuery={searchQuery}
-                currentPage={currentPage}
-                setPageCount={setPageCount}
-              />
-              
-              <Pagination
-                count={pageCount}
-                page={currentPage}
-                onChange={handlePageChange}
-                color="primary"
-                showFirstButton
-                showLastButton
+      <Box textAlign="center" p={2} bgcolor="primary.main" color="white" borderRadius={2}>
+        <Typography variant="h4">Feature Toggle Dashboard</Typography>
+      </Box>
 
-              />
-            </TabPanel>
-          ))}
-        </TabPanel>
-      ))}
-      </>}
-      {(error)&& <h3>Error while getting the data. Check browsers console for more info..... </h3> }
+      {loading && <Typography align="center" variant="h6">Loading the data. Please wait....</Typography>}
+      {error && <Typography align="center" variant="h6" color="error">Error loading data.</Typography>}
+      
+      {!loading && !error && (
+        <>
+          <Box display="flex" justifyContent="center" mt={2}>
+            <Tabs value={tier} onChange={(e, newValue) => { setTier(newValue); setEnv(0); setCurrentPage(0); setSearchQuery(''); }}>
+              {tiers.map((tierName, index) => <Tab key={index} label={tierName} sx={{ fontWeight: tier === index ? 'bold' : 'normal' }} />)}
+            </Tabs>
+          </Box>
+          
+          <Box display="flex" justifyContent="center" mt={2}>
+            <Tabs value={env} onChange={(e, newValue) => { setEnv(newValue); setCurrentPage(0); setSearchQuery(''); }}>
+              {environments.map((envName, index) => <Tab key={index} label={envName} sx={{ fontWeight: env === index ? 'bold' : 'normal' }} />)}
+            </Tabs>
+          </Box>
+
+          <Box display="flex" alignItems="center" gap={2} p={2}>
+            <TextField label="Search" variant="outlined" fullWidth value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            <FormControl>
+              <InputLabel>Persona</InputLabel>
+              <Select value={personaFilter} onChange={(e) => setPersonaFilter(e.target.value)}>
+                <MenuItem value="">All</MenuItem>
+                {personas.map(persona => <MenuItem key={persona} value={persona}>{persona}</MenuItem>)}
+              </Select>
+            </FormControl>
+          </Box>
+
+          <EnvironmentTable data={data[tiers[tier]][environments[env]]} searchQuery={searchQuery} currentPage={currentPage} setPageCount={setPageCount} personaFilter={personaFilter} />
+          
+          <Pagination count={pageCount} page={currentPage} onChange={handlePageChange} color="primary" showFirstButton showLastButton />
+        </>
+      )}
     </div>
   );
 }
