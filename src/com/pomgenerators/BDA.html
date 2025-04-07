@@ -1,13 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>ATG Repo Viewer - Vertical Headers</title>
+  <title>ATG Repo Viewer - Vertical Headers with Print XML</title>
   <style>
     textarea { width: 100%; height: 200px; margin-bottom: 10px; }
     table { border-collapse: collapse; width: 100%; margin: 20px 0; }
     th, td { border: 1px solid #ccc; padding: 6px; text-align: left; font-family: monospace; }
     th { background: #f4f4f4; }
     h4 { font-family: sans-serif; background: #eaeaea; padding: 5px; }
+    button.small-btn {
+      margin-left: 4px;
+      padding: 0 4px;
+      font-size: 10px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -55,7 +61,6 @@
     let html = "";
 
     for (const [desc, items] of Object.entries(grouped)) {
-      // collect all unique props
       const propNames = new Set();
       items.forEach(item => Object.keys(item).forEach(k => { if (k !== "id") propNames.add(k); }));
       const sortedProps = Array.from(propNames).sort();
@@ -65,7 +70,12 @@
       for (let prop of sortedProps) {
         html += `<tr><th>${prop}</th>`;
         for (let item of items) {
-          html += `<td>${item[prop] || ""}</td>`;
+          const value = item[prop] || "";
+          const xmlSnippet = value ? `<print-item item-descriptor="${prop}" id="${value}" />` : "";
+          const button = value
+            ? `<button class="small-btn" title="Copy to clipboard" onclick="copyToClipboard('${xmlSnippet}')">+</button>`
+            : "";
+          html += `<td>${value}${button}</td>`;
         }
         html += `</tr>`;
       }
@@ -74,6 +84,14 @@
     }
 
     document.getElementById("tableContainer").innerHTML = html || "<p>No <add-item> elements found.</p>";
+  }
+
+  function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+      console.log(`Copied: ${text}`);
+    }).catch(err => {
+      alert("Failed to copy to clipboard");
+    });
   }
 </script>
 
