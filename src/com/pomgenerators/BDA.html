@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>ATG Repo Viewer - Vertical Headers with Print XML</title>
+  <title>ATG Repo Viewer - Vertical Table + Copy Print-Item</title>
   <style>
     textarea { width: 100%; height: 200px; margin-bottom: 10px; }
     table { border-collapse: collapse; width: 100%; margin: 20px 0; }
@@ -13,6 +13,7 @@
       padding: 0 4px;
       font-size: 10px;
       cursor: pointer;
+      white-space: nowrap;
     }
   </style>
 </head>
@@ -40,6 +41,7 @@
       document.getElementById("tableContainer").innerHTML = "<p style='color:red;'>Invalid XML format</p>";
       return;
     }
+
     const addItems = xmlDoc.getElementsByTagName("add-item");
     const grouped = {};
 
@@ -70,9 +72,13 @@
         html += `<tr><th>${prop}</th>`;
         for (let item of items) {
           const value = item[prop] || "";
-          const xmlSnippet = value ? `<print-item item-descriptor="${prop}" id="${value}" />` : "";
+          let xmlSnippets = "";
+          if (value) {
+            const values = value.split(",").map(v => v.trim()).filter(v => v);
+            xmlSnippets = values.map(v => `<print-item item-descriptor="${prop}" id="${v}" />`).join("\n");
+          }
           const button = value
-            ? `<button class="small-btn" title="Copy to clipboard" onclick="copyToClipboard('${xmlSnippet}')">+</button>`
+            ? `<button class="small-btn" title="Copy XML" onclick="copyToClipboard(\`${xmlSnippets}\`)">+</button>`
             : "";
           html += `<td>${value}${button}</td>`;
         }
@@ -87,9 +93,9 @@
 
   function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
-      console.log(`Copied: ${text}`);
+      console.log("Copied:", text);
     }).catch(err => {
-      alert("Failed to copy to clipboard");
+      alert("Clipboard copy failed.");
     });
   }
 </script>
