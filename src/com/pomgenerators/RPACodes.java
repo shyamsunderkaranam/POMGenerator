@@ -89,3 +89,69 @@ public class PrepareATGLinksService {
         return new ArrayList<>(); // placeholder
     }
 }
+
+public List<JsonObject> createPersonaDetailsFromEnv(JsonObject atgenvt, String tier) {
+    JsonArray personas = personaJsonObject.getAsJsonArray("personas");
+    logger.info("In createPersonaDetailsFromEnv");
+
+    List<JsonObject> envLinks = new ArrayList<>();
+
+    for (JsonElement personaElement : personas) {
+        JsonObject persona = personaElement.getAsJsonObject();
+        String siloNumber;
+        int linkAvailability = 0;
+
+        if ("app".equals(persona.get("persId").getAsString())) {
+            int maxSilos = atgenvt.get("agentsilos").getAsInt();
+
+            for (int l = 0; l < MAX_AGENT_SILOS; l++) {
+                JsonObject envStateJSON = new JsonObject();
+                envStateJSON.addProperty("tier", tier);
+                envStateJSON.addProperty("environment", atgenvt.get("environments").getAsString());
+                envStateJSON.addProperty("State", linkAvailability);
+                envStateJSON.addProperty("applicable", "Y");
+                envStateJSON.addProperty("ignoreEmailDummyEnable", atgenvt.get("ignoreEmailDummyEnable").getAsString());
+
+                try {
+                    siloNumber = String.format("%02d", l + 1);
+                    String desiredLink = getDesiredLink(atgenvt, persona, siloNumber);
+
+                    if ((l + 1) > maxSilos) {
+                        envStateJSON.addProperty("applicable", "N");
+                    }
+
+                    envStateJSON.addProperty("persona", persona.get("persona").getAsString() + siloNumber);
+                    envStateJSON.addProperty("Link", desiredLink);
+
+                    envLinks.add(envStateJSON);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            boolean isTradepoint = "Tradepoint".equalsIgnoreCase(persona.get("persId").getAsString());
+            boolean tradepointNA = "NA".equals(atgenvt.get("tradepoint").getAsString());
+
+            if (!(tradepointNA && isTradepoint)) {
+                JsonObject envStateJSON = new JsonObject();
+                envStateJSON.addProperty("tier", tier);
+                envStateJSON.addProperty("environment", atgenvt.get("environments").getAsString());
+                envStateJSON.addProperty("State", linkAvailability);
+                envStateJSON.addProperty("applicable", "Y");
+                envStateJSON.addProperty("ignoreEmailDummyEnable", atgenvt.get("ignoreEmailDummyEnable").getAsString());
+
+                try {
+                    String desiredLink = getDesiredLink(atgenvt, persona, "");
+                    envStateJSON.addProperty("Link", desiredLink);
+                    envStateJSON.addProperty("persona", persona.get("persona").getAsString());
+
+                    envLinks.add(envStateJSON);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    return envLinks;
+}
