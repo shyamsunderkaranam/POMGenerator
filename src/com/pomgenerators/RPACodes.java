@@ -1,6 +1,6 @@
 import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.util.ArrayList;
@@ -11,35 +11,38 @@ import java.util.stream.StreamSupport;
 public class PrepareATGLinksService {
 
     public List<JsonObject> getALLATGEnvUrls(String tierNames) {
+        // Step 1: Get config from envData (assumed to return JsonArray)
+        JsonArray config = envData.getData(ATG_ENV_CONFIG_FILE); // envData assumed to return JsonArray
 
-        JsonArray config = envData.getData(ATG_ENV_CONFIG_FILE); // Assuming envData returns JsonArray
+        // Step 2: Extract env and persona config
         JsonObject envJsonObject = config.get(0).getAsJsonObject();
-        JsonObject personaJsonObject = config.get(1).getAsJsonObject();
+        JsonObject personaJsonObject = config.get(1).getAsJsonObject(); // If unused, can remove
+
+        // Step 3: Get tiers array
         JsonArray tiers = envJsonObject.getAsJsonArray("tiers");
 
-        // Stream the tiers array
-        Stream<JsonObject> tierStream = StreamSupport.stream(tiers.spliterator(), false)
+        // Step 4: Filter tiers and call createEnvironmentDetailsfromTier
+        List<List<JsonObject>> tempListObject = StreamSupport.stream(tiers.spliterator(), false)
             .map(JsonElement::getAsJsonObject)
-            .filter(obj -> {
-                String tier = obj.get("tier").getAsString();
+            .filter(tierJson -> {
+                String tier = tierJson.get("tier").getAsString();
                 return tier.equalsIgnoreCase(tierNames) || tierNames.equalsIgnoreCase("ALL");
-            });
-
-        // Apply downstream processing for each tier
-        List<List<JsonObject>> tempListObject = tierStream
-            .map(envTier -> createEnvironmentDetailsfromTier(envTier)) // Assuming this returns List<JsonObject>
+            })
+            .map(this::createEnvironmentDetailsfromTier) // returns List<JsonObject>
+            .filter(list -> list != null)
             .collect(Collectors.toList());
 
-        // Flatten the result
-        List<JsonObject> finalList = tempListObject.stream()
+        // Step 5: Flatten the list
+        List<JsonObject> tempJsonObjectList = tempListObject.stream()
             .flatMap(List::stream)
             .collect(Collectors.toList());
 
-        return finalList;
+        return tempJsonObjectList;
     }
 
+    // Stub method (assumed to exist)
     private List<JsonObject> createEnvironmentDetailsfromTier(JsonObject envTier) {
-        // Your implementation here
-        return new ArrayList<>(); // placeholder
+        // Replace with actual logic
+        return new ArrayList<>();
     }
 }
