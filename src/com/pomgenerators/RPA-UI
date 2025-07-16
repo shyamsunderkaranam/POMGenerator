@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html ng-app="jobTrackerApp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Tracker Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.3/angular.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 300;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            transform: translateY(0);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.9em;
+        }
+
+        select, input {
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .jobs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .jobs-table th {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.9em;
+        }
+
+        .jobs-table td {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s ease;
+        }
+
+        .jobs-table tr:hover {
+            background-color: #f8f9ff;
+            cursor: pointer;
+            transform: scale(1.01);
+            transition: all 0.2s ease;
+        }
+
+        .jobs-table tr.selected {
+            background-color: #e8f2ff;
+            border-left: 4px solid #667eea;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-running {
+            background: #cce5ff;
+            color: #0066cc;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .detail-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #667eea;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .detail-panel h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .detail-card {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e0e6ff;
+        }
+
+        .detail-card h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e6ff;
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .detail-value {
+            color: #34495e;
+            font-family: monospace;
+        }
+
+        .no-selection {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .jobs-table {
+                font-size: 0.9em;
+            }
+
+            .jobs-table th,
+            .jobs-table td {
+                padding: 10px 8px;
+            }
+
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body ng-controller="JobTrackerController">
+    <div class="container">
+        <h1>Job Tracker Dashboard</h1>
+        
+        <!-- Statistics Cards -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-number">{{stats.total}}</div>
+                <div class="stat-label">Total Jobs</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{stats.pending}}</div>
+                <div class="stat-label">Pending</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{stats.running}}</div>
+                <div class="stat-label">Running</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{stats.completed}}</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{stats.failed}}</div>
+                <div class="stat-label">Failed</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+            <div class="filter-group">
+                <label>Status Filter:</label>
+                <select ng-model="statusFilter" ng-change="filterJobs()">
+                    <option value="">All Statuses</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="RUNNING">Running</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="FAILED">Failed</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Search:</label>
+                <input type="text" ng-model="searchText" ng-change="filterJobs()" placeholder="Search jobs...">
+            </div>
+        </div>
+
+        <!-- Jobs Table -->
+        <table class="jobs-table">
+            <thead>
+                <tr>
+                    <th>Job ID</th>
+                    <th>Booking ID</th>
+                    <th>Customer</th>
+                    <th>Status</th>
+                    <th>Start Time</th>
+                    <th>Duration</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="job in filteredJobs" 
+                    ng-click="selectJob(job)" 
+                    ng-class="{'selected': selectedJob && selectedJob.jobId === job.jobId}">
+                    <td>{{job.jobId}}</td>
+                    <td>{{job.bookingId}}</td>
+                    <td>{{job.booking.customerName}}</td>
+                    <td>
+                        <span class="status-badge" 
+                              ng-class="'status-' + job.status.toLowerCase()">
+                            {{job.status}}
+                        </span>
+                    </td>
+                    <td>{{job.startTime | date:'medium'}}</td>
+                    <td>{{calculateDuration(job)}}</td>
+                    <td>
+                        <button ng-if="job.status === 'FAILED'" 
+                                style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">
+                            Retry
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Detail Panel -->
+        <div class="detail-panel" ng-if="selectedJob">
+            <h3>Job Details - {{selectedJob.jobId}}</h3>
+            <div class="detail-grid">
+                <div class="detail-card">
+                    <h4>Job Information</h4>
+                    <div class="detail-item">
+                        <span class="detail-label">Job ID:</span>
+                        <span class="detail-value">{{selectedJob.jobId}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Status:</span>
+                        <span class="detail-value">{{selectedJob.status}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Start Time:</span>
+                        <span class="detail-value">{{selectedJob.startTime | date:'medium'}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Completion Time:</span>
+                        <span class="detail-value">{{selectedJob.completionTime | date:'medium'}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Duration:</span>
+                        <span class="detail-value">{{calculateDuration(selectedJob)}}</span>
+                    </div>
+                </div>
+                
+                <div class="detail-card">
+                    <h4>Booking Information</h4>
+                    <div class="detail-item">
+                        <span class="detail-label">Booking ID:</span>
+                        <span class="detail-value">{{selectedJob.booking.bookingId}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Customer:</span>
+                        <span class="detail-value">{{selectedJob.booking.customerName}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Email:</span>
+                        <span class="detail-value">{{selectedJob.booking.customerEmail}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Service:</span>
+                        <span class="detail-value">{{selectedJob.booking.serviceType}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Booking Date:</span>
+                        <span class="detail-value">{{selectedJob.booking.bookingDate | date:'medium'}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Notes:</span>
+                        <span class="detail-value">{{selectedJob.booking.notes || 'N/A'}}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="no-selection" ng-if="!selectedJob">
+            <p>Click on a job row to view detailed information</p>
+        </div>
+    </div>
+
+    <script>
+        angular.module('jobTrackerApp', [])
+        .controller('JobTrackerController', function($scope, $interval) {
+            // Mock data - replace with actual API calls
+            $scope.jobs = [
+                {
+                    jobId: 'JOB-001',
+                    bookingId: 'BK-001',
+                    status: 'COMPLETED',
+                    startTime: new Date(2025, 6, 10, 9, 0),
+                    completionTime: new Date(2025, 6, 10, 10, 30),
+                    booking: {
+                        bookingId: 'BK-001',
+                        customerName: 'John Doe',
+                        customerEmail: 'john@example.com',
+                        serviceType: 'Data Processing',
+                        bookingDate: new Date(2025, 6, 5),
+                        notes: 'Regular monthly data processing job'
+                    }
+                },
+                {
+                    jobId: 'JOB-002',
+                    bookingId: 'BK-002',
+                    status: 'RUNNING',
+                    startTime: new Date(2025, 6, 12, 14, 15),
+                    completionTime: null,
+                    booking: {
+                        bookingId: 'BK-002',
+                        customerName: 'Jane Smith',
+                        customerEmail: 'jane@example.com',
+                        serviceType: 'Email Campaign',
+                        bookingDate: new Date(2025, 6, 8),
+                        notes: 'Weekly newsletter campaign'
+                    }
+                },
+                {
+                    jobId: 'JOB-003',
+                    bookingId: 'BK-003',
+                    status: 'PENDING',
+                    startTime: new Date(2025, 6, 13, 8, 0),
+                    completionTime: null,
+                    booking: {
+                        bookingId: 'BK-003',
+                        customerName: 'Bob Johnson',
+                        customerEmail: 'bob@example.com',
+                        serviceType: 'Report Generation',
+                        bookingDate: new Date(2025, 6, 9),
+                        notes: 'Monthly sales report'
+                    }
+                },
+                {
+                    jobId: 'JOB-004',
+                    bookingId: 'BK-004',
+                    status: 'FAILED',
+                    startTime: new Date(2025, 6, 11, 16, 45),
+                    completionTime: new Date(2025, 6, 11, 16, 50),
+                    booking: {
+                        bookingId: 'BK-004',
+                        customerName: 'Alice Brown',
+                        customerEmail: 'alice@example.com',
+                        serviceType: 'Data Backup',
+                        bookingDate: new Date(2025, 6, 7),
+                        notes: 'Critical data backup - high priority'
+                    }
+                }
+            ];
+
+            $scope.filteredJobs = $scope.jobs;
+            $scope.selectedJob = null;
+            $scope.statusFilter = '';
+            $scope.searchText = '';
+
+            // Calculate statistics
+            $scope.updateStats = function() {
+                $scope.stats = {
+                    total: $scope.jobs.length,
+                    pending: $scope.jobs.filter(j => j.status === 'PENDING').length,
+                    running: $scope.jobs.filter(j => j.status === 'RUNNING').length,
+                    completed: $scope.jobs.filter(j => j.status === 'COMPLETED').length,
+                    failed: $scope.jobs.filter(j => j.status === 'FAILED').length
+                };
+            };
+
+            // Filter jobs based on status and search text
+            $scope.filterJobs = function() {
+                $scope.filteredJobs = $scope.jobs.filter(function(job) {
+                    var matchesStatus = !$scope.statusFilter || job.status === $scope.statusFilter;
+                    var matchesSearch = !$scope.searchText || 
+                        job.jobId.toLowerCase().includes($scope.searchText.toLowerCase()) ||
+                        job.bookingId.toLowerCase().includes($scope.searchText.toLowerCase()) ||
+                        job.booking.customerName.toLowerCase().includes($scope.searchText.toLowerCase()) ||
+                        job.booking.serviceType.toLowerCase().includes($scope.searchText.toLowerCase());
+                    
+                    return matchesStatus && matchesSearch;
+                });
+            };
+
+            // Select a job to view details
+            $scope.selectJob = function(job) {
+                $scope.selectedJob = job;
+            };
+
+            // Calculate job duration
+            $scope.calculateDuration = function(job) {
+                if (!job.startTime) return 'N/A';
+                
+                var endTime = job.completionTime || new Date();
+                var duration = (endTime - job.startTime) / (1000 * 60); // minutes
+                
+                if (duration < 60) {
+                    return Math.round(duration) + ' min';
+                } else {
+                    var hours = Math.floor(duration / 60);
+                    var minutes = Math.round(duration % 60);
+                    return hours + 'h ' + minutes + 'm';
+                }
+            };
+
+            // Initialize
+            $scope.updateStats();
+
+            // Simulate real-time updates (in a real app, this would be WebSocket or polling)
+            $interval(function() {
+                // Simulate job status changes
+                $scope.jobs.forEach(function(job) {
+                    if (job.status === 'RUNNING' && Math.random() < 0.1) {
+                        job.status = 'COMPLETED';
+                        job.completionTime = new Date();
+                    } else if (job.status === 'PENDING' && Math.random() < 0.05) {
+                        job.status = 'RUNNING';
+                    }
+                });
+                
+                $scope.updateStats();
+                $scope.filterJobs();
+            }, 5000);
+        });
+    </script>
+</body>
+</html>
