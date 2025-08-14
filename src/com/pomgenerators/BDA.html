@@ -1,103 +1,160 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>ATG Repo Viewer - Vertical Table + Print Item Copy</title>
+  <meta charset="UTF-8">
+  <title>ATG XML Viewer</title>
   <style>
-    textarea { width: 100%; height: 200px; margin-bottom: 10px; }
-    table { border-collapse: collapse; width: 100%; margin: 20px 0; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: left; font-family: monospace; }
-    th { background: #f4f4f4; }
-    h4 { font-family: sans-serif; background: #eaeaea; padding: 5px; }
-    button.small-btn {
-      margin-left: 4px;
-      padding: 0 4px;
-      font-size: 10px;
-      cursor: pointer;
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+      margin-bottom: 10px;
+    }
+    button {
+      margin-bottom: 20px;
+      padding: 6px 12px;
+    }
+    table {
+      border-collapse: collapse;
+      margin-bottom: 30px;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f4f4f4;
+    }
+    td {
+      max-width: 200px;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      position: relative;
+    }
+    td:hover {
+      white-space: normal;
+      overflow: visible;
+      background: #ffffe0;
+      z-index: 1;
+    }
+    .copy-btn {
+      font-size: 10px;
+      padding: 2px 4px;
+      margin-left: 4px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
 
-<h3>Paste Full ATG Repository XML:</h3>
-<textarea id="xmlInput" placeholder="Paste multiple <add-item> blocks here..."></textarea><br>
-<button onclick="renderVerticalTable()">Render Vertical Headers</button>
-
-<div id="tableContainer"></div>
+<h2>ATG XML to Table</h2>
+<textarea id="xmlInput" placeholder="Paste ATG repo XML here"></textarea><br>
+<button onclick="parseXML()">Convert to Table</button>
+<div id="output"></div>
 
 <script>
-  function renderVerticalTable() {
-    const xmlString = document.getElementById("xmlInput").value.trim();
-    if (!xmlString) {
-      alert("Please paste XML content.");
-      return;
-    }
+function formatValues(val, itemsPerLine = 3) {
+  if (!val) return "";
+  const parts = val.split(",").map(v => v.trim());
+  let lines = [];
+  for (let i = 0; i < parts.length; i += itemsPerLine) {
+    lines.push(parts.slice(i, i + itemsPerLine).join(", "));
+  }
+  return lines.join("<br>");
+}
 
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(`<root>${xmlString}</root>`, "application/xml");
-    const errorNode = xmlDoc.querySelector("parsererror");
+function copyPrintItemXML(header, value) {
+  if (!value) return;
+  const ids = value.split(",").map(v => v.trim()).filter(Boolean);
+  const xmls = ids.map(id => `<print-item item-descriptor="${header}" id="${id}" />`);
+  const finalText = xmls.join("\n");
+  navigator.clipboard.writeText(finalText).then(() => {
+    alert("Copied to clipboard:\n" + finalText);
+  });
+}
 
-    if (errorNode) {
-      document.getElementById("tableContainer").innerHTML = "<p style='color:red;'>Invalid XML format</p>";
-      return;
-    }
-
-    const addItems = xmlDoc.getElementsByTagName("add-item");
-    const grouped = {};
-
-    for (let item of addItems) {
-      const desc = item.getAttribute("item-descriptor") || "unknown";
-      const id = item.getAttribute("id") || "no-id";
-
-      const props = {};
-      for (let prop of item.getElementsByTagName("set-property")) {
-        const name = prop.getAttribute("name");
-        const value = prop.textContent.trim();
-        if (name) props[name] = value;
-      }
-      grouped[desc] = grouped[desc] || [];
-      grouped[desc].push({ id, ...props });
-    }
-
-    let html = "";
-
-    for (const [desc, items] of Object.entries(grouped)) {
-      const propNames = new Set();
-      items.forEach(item => Object.keys(item).forEach(k => { if (k !== "id") propNames.add(k); }));
-      const sortedProps = Array.from(propNames).sort();
-
-      html += `<h4>${desc}</h4><table><tr><th>Property</th>${items.map(i => `<th>${i.id}</th>`).join("")}</tr>`;
-
-      for (let prop of sortedProps) {
-        html += `<tr><th>${prop}</th>`;
-        for (let item of items) {
-          const value = item[prop] || "";
-          let xmlSnippets = "";
-          if (value) {
-            const values = value.split(",").map(v => v.trim()).filter(v => v);
-            xmlSnippets = values.map(v => `<print-item item-descriptor="${prop}" id="${v}" />`).join("\n");
-          }
-          const button = value
-            ? `<button class="small-btn" title="Copy XML" onclick="copyToClipboard(decodeURIComponent('${encodeURIComponent(xmlSnippets)}'))">+</button>`
-            : "";
-          html += `<td>${value}${button}</td>`;
-        }
-        html += `</tr>`;
-      }
-
-      html += "</table>";
-    }
-
-    document.getElementById("tableContainer").innerHTML = html || "<p>No <add-item> elements found.</p>";
+function parseXML() {
+  const xmlText = document.getElementById("xmlInput").value.trim();
+  if (!xmlText) {
+    alert("Please paste XML content");
+    return;
   }
 
-  function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-      console.log("Copied to clipboard:\n", text);
-    }).catch(err => {
-      alert("Clipboard copy failed.");
-    });
+  let parser = new DOMParser();
+  let xmlDoc = parser.parseFromString(xmlText, "text/xml");
+  let items = xmlDoc.getElementsByTagName("add-item");
+
+  let dataMap = {}; // { itemDescriptor: [ {name: value} ] }
+
+  for (let item of items) {
+    let descriptor = item.getAttribute("item-descriptor");
+    if (!dataMap[descriptor]) dataMap[descriptor] = [];
+
+    let row = {};
+    let props = item.getElementsByTagName("set-property");
+    for (let prop of props) {
+      let name = prop.getAttribute("name");
+      let value = prop.textContent.trim();
+      row[name] = value;
+    }
+    dataMap[descriptor].push(row);
   }
+
+  let outputDiv = document.getElementById("output");
+  outputDiv.innerHTML = "";
+
+  for (let descriptor in dataMap) {
+    let table = document.createElement("table");
+    let thead = document.createElement("thead");
+    let headerRow = document.createElement("tr");
+
+    let keys = [...new Set(dataMap[descriptor].flatMap(obj => Object.keys(obj)))];
+    headerRow.appendChild(document.createElement("th")).textContent = "Property";
+
+    for (let i = 0; i < dataMap[descriptor].length; i++) {
+      let th = document.createElement("th");
+      th.textContent = `${descriptor} ${i + 1}`;
+      headerRow.appendChild(th);
+    }
+
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    let tbody = document.createElement("tbody");
+    for (let key of keys) {
+      let tr = document.createElement("tr");
+      let th = document.createElement("th");
+      th.textContent = key;
+      tr.appendChild(th);
+
+      for (let row of dataMap[descriptor]) {
+        let td = document.createElement("td");
+        let val = row[key] || "";
+        td.innerHTML = formatValues(val, 3);
+
+        // Small copy button
+        let btn = document.createElement("button");
+        btn.textContent = "⧉";
+        btn.className = "copy-btn";
+        btn.onclick = () => copyPrintItemXML(key, val);
+
+        td.appendChild(btn);
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+
+    table.appendChild(tbody);
+    outputDiv.appendChild(table);
+  }
+}
 </script>
 
 </body>
