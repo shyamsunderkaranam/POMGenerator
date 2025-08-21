@@ -1,43 +1,42 @@
-import org.apache.hc.client5.http.classic.CloseableHttpClient;
+// HttpClientConfig.java
 import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.core5.util.TimeValue;
 import org.apache.hc.core5.util.Timeout;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.concurrent.TimeUnit;
-
 @Configuration
 public class HttpClientConfig {
 
-    @Bean
+    @Bean(destroyMethod = "close")
     public CloseableHttpClient httpClient() {
-        // ✅ Connection pool manager
         PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
-        cm.setMaxTotal(100);          // max total connections
-        cm.setDefaultMaxPerRoute(20); // max per target host
+        cm.setMaxTotal(100);
+        cm.setDefaultMaxPerRoute(20);
 
-        // ✅ Default timeouts
         RequestConfig requestConfig = RequestConfig.custom()
                 .setConnectTimeout(Timeout.ofSeconds(5))
                 .setConnectionRequestTimeout(Timeout.ofSeconds(5))
                 .setResponseTimeout(Timeout.ofSeconds(10))
                 .build();
 
-        // ✅ Build HttpClient bean
         return HttpClients.custom()
                 .setConnectionManager(cm)
                 .setDefaultRequestConfig(requestConfig)
                 .evictExpiredConnections()
-                .evictIdleConnections(30, TimeUnit.SECONDS)
+                .evictIdleConnections(TimeValue.ofSeconds(30))  // <-- single TimeValue
                 .build();
     }
 }
 
-import org.apache.hc.client5.http.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
+
+// JsoupFetcher.java
 import org.apache.hc.client5.http.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.core5.http.HttpEntity;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -51,14 +50,13 @@ public class JsoupFetcher {
     private final CloseableHttpClient httpClient;
 
     public JsoupFetcher(CloseableHttpClient httpClient) {
-        this.httpClient = httpClient; // Spring injects bean
+        this.httpClient = httpClient; // autowired from the @Bean
     }
 
     public Document fetch(String url) throws Exception {
-        HttpGet request = new HttpGet(url);
-
-        try (CloseableHttpResponse response = httpClient.execute(request)) {
-            HttpEntity entity = response.getEntity();
+        HttpGet req = new HttpGet(url);
+        try (CloseableHttpResponse resp = httpClient.execute(req)) {
+            HttpEntity entity = resp.getEntity();
             if (entity != null) {
                 try (InputStream in = entity.getContent()) {
                     return Jsoup.parse(in, "UTF-8", url);
