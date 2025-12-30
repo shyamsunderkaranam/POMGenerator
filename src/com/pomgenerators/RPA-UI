@@ -310,8 +310,25 @@
                 </select>
             </div>
             <div class="filter-group">
+                <label>Start Date:</label>
+                <input type="date" ng-model="startDate" ng-change="filterJobs()" placeholder="Start date">
+            </div>
+            <div class="filter-group">
+                <label>End Date:</label>
+                <input type="date" ng-model="endDate" ng-change="filterJobs()" placeholder="End date">
+            </div>
+            <div class="filter-group">
                 <label>Search:</label>
                 <input type="text" ng-model="searchText" ng-change="filterJobs()" placeholder="Search jobs...">
+            </div>
+            <div class="filter-group" style="justify-content: flex-end;">
+                <label>&nbsp;</label>
+                <button ng-click="resetFilters()" 
+                        style="padding: 10px 20px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: transform 0.2s ease, box-shadow 0.2s ease;"
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 5px 15px rgba(102, 126, 234, 0.4)';"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    Reset Filters
+                </button>
             </div>
         </div>
 
@@ -487,6 +504,8 @@
             $scope.selectedJob = null;
             $scope.statusFilter = '';
             $scope.searchText = '';
+            $scope.startDate = null;
+            $scope.endDate = null;
 
             // Calculate statistics
             $scope.updateStats = function() {
@@ -499,7 +518,7 @@
                 };
             };
 
-            // Filter jobs based on status and search text
+            // Filter jobs based on status, date range, and search text
             $scope.filterJobs = function() {
                 $scope.filteredJobs = $scope.jobs.filter(function(job) {
                     var matchesStatus = !$scope.statusFilter || job.status === $scope.statusFilter;
@@ -509,50 +528,20 @@
                         job.booking.customerName.toLowerCase().includes($scope.searchText.toLowerCase()) ||
                         job.booking.serviceType.toLowerCase().includes($scope.searchText.toLowerCase());
                     
-                    return matchesStatus && matchesSearch;
-                });
-            };
-
-            // Select a job to view details
-            $scope.selectJob = function(job) {
-                $scope.selectedJob = job;
-            };
-
-            // Calculate job duration
-            $scope.calculateDuration = function(job) {
-                if (!job.startTime) return 'N/A';
-                
-                var endTime = job.completionTime || new Date();
-                var duration = (endTime - job.startTime) / (1000 * 60); // minutes
-                
-                if (duration < 60) {
-                    return Math.round(duration) + ' min';
-                } else {
-                    var hours = Math.floor(duration / 60);
-                    var minutes = Math.round(duration % 60);
-                    return hours + 'h ' + minutes + 'm';
-                }
-            };
-
-            // Initialize
-            $scope.updateStats();
-
-            // Simulate real-time updates (in a real app, this would be WebSocket or polling)
-            $interval(function() {
-                // Simulate job status changes
-                $scope.jobs.forEach(function(job) {
-                    if (job.status === 'RUNNING' && Math.random() < 0.1) {
-                        job.status = 'COMPLETED';
-                        job.completionTime = new Date();
-                    } else if (job.status === 'PENDING' && Math.random() < 0.05) {
-                        job.status = 'RUNNING';
-                    }
-                });
-                
-                $scope.updateStats();
-                $scope.filterJobs();
-            }, 5000);
-        });
-    </script>
-</body>
-</html>
+                    // Date range filtering
+                    var matchesDateRange = true;
+                    if ($scope.startDate || $scope.endDate) {
+                        var jobStartTime = new Date(job.startTime);
+                        jobStartTime.setHours(0, 0, 0, 0); // Reset time to start of day
+                        
+                        if ($scope.startDate) {
+                            var filterStartDate = new Date($scope.startDate);
+                            filterStartDate.setHours(0, 0, 0, 0);
+                            matchesDateRange = matchesDateRange && jobStartTime >= filterStartDate;
+                        }
+                        
+                        if ($scope.endDate) {
+                            var filterEndDate = new Date($scope.endDate);
+                            filterEndDate.setHours(23, 59, 59, 999); // End of day
+                            matchesDateRange = matchesDateRange && jobStartTime <= filterEndDate;
+                       
